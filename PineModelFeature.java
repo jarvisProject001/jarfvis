@@ -74,8 +74,9 @@ public class PineModelFeature implements Feature {
         return z;
     }
 
-    private static boolean replaceable(WorldGenLevel level, BlockPos pos) {
-        return level.getBlockState(pos).is(BlockTags.REPLACEABLE_BY_TREES);
+     private static boolean replaceable(WorldGenLevel level, BlockPos pos) {
+        BlockState s = level.getBlockState(pos);
+        return s.isAir() || s.is(BlockTags.REPLACEABLE_BY_TREES);
     }
 
     private static boolean trunkFree(WorldGenLevel level, BlockPos origin, Entry[] tree, int rot) {
