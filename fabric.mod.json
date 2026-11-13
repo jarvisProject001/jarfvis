@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "spiralspruce",
+  "version": "${version}",
+  "name": "Spiral Spruce",
+  "description": "Pohon spruce tumbuh tinggi dan ramping dengan gerombol daun berputar spiral.",
+  "authors": ["You"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": { "main": ["com.example.spiralspruce.SpiralSpruce"] },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}
