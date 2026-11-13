@@ -3,6 +3,7 @@ package com.example.spiralspruce;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.mojang.logging.LogUtils;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -15,12 +16,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.levelgen.feature.Feature;
+import org.slf4j.Logger;
 
-/**
- * Menumbuhkan pohon dari model litematic (6 variasi, tinggi 17-36 blok).
- * Semua blok kayu adalah spruce; daun spruce dengan distance sudah dihitung.
- */
 public class PineModelFeature implements Feature {
+    private static final Logger LOGGER = LogUtils.getLogger();
     public static final MapCodec<PineModelFeature> CODEC = MapCodec.unit(PineModelFeature::new);
 
     private record Entry(int dx, int dy, int dz, String code) {}
@@ -48,17 +47,20 @@ public class PineModelFeature implements Feature {
 
     @Override
     public boolean place(WorldGenLevel level, ChunkGenerator chunkGenerator, RandomSource random, BlockPos origin) {
+        LOGGER.info("[SpiralSpruce] place() dipanggil di {}", origin);
         int n = TREES.size();
         int start = random.nextInt(n);
         int rot = random.nextInt(4);
-        // coba variasi acak dulu; kalau batangnya terhalang, coba yang lebih pendek
         for (int k = 0; k < n; k++) {
-            Entry[] tree = TREES.get(Math.floorMod(start - k, n));
-            if (trunkFree(level, origin, tree, rot)) {
+            int idx = Math.floorMod(start - k, n);
+            Entry[] tree = TREES.get(idx);
+            if (trunkFree(level, origin, tree, rot, idx)) {
                 build(level, origin, tree, rot);
+                LOGGER.info("[SpiralSpruce] berhasil menumbuhkan variasi {}", idx);
                 return true;
             }
         }
+        LOGGER.info("[SpiralSpruce] gagal: semua variasi terhalang");
         return false;
     }
 
@@ -74,22 +76,25 @@ public class PineModelFeature implements Feature {
         return z;
     }
 
-     private static boolean replaceable(WorldGenLevel level, BlockPos pos) {
+    private static boolean replaceable(WorldGenLevel level, BlockPos pos) {
         BlockState s = level.getBlockState(pos);
         return s.isAir() || s.is(BlockTags.REPLACEABLE_BY_TREES);
     }
 
-    private static boolean trunkFree(WorldGenLevel level, BlockPos origin, Entry[] tree, int rot) {
+    private static boolean trunkFree(WorldGenLevel level, BlockPos origin, Entry[] tree, int rot, int idx) {
         for (Entry e : tree) {
             if (e.dx() == 0 && e.dz() == 0 && !e.code().startsWith("L")) {
-                if (!replaceable(level, origin.offset(0, e.dy(), 0))) return false;
+                BlockPos p = origin.offset(0, e.dy(), 0);
+                if (!replaceable(level, p)) {
+                    LOGGER.info("[SpiralSpruce] variasi {} terhalang di {} oleh {}", idx, p, level.getBlockState(p));
+                    return false;
+                }
             }
         }
         return true;
     }
 
     private static void build(WorldGenLevel level, BlockPos origin, Entry[] tree, int rot) {
-        // kayu dulu, daun belakangan supaya daun tidak menimpa kayu
         for (int pass = 0; pass < 2; pass++) {
             for (Entry e : tree) {
                 boolean leaf = e.code().startsWith("L");
