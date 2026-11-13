@@ -3,24 +3,26 @@ package com.example.spiralspruce;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.levelgen.feature.Feature;
-import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
-import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
 /**
  * Menumbuhkan pohon dari model litematic (6 variasi, tinggi 17-36 blok).
  * Semua blok kayu adalah spruce; daun spruce dengan distance sudah dihitung.
  */
-public class PineModelFeature extends Feature<NoneFeatureConfiguration> {
+public class PineModelFeature implements Feature {
+    public static final MapCodec<PineModelFeature> CODEC = MapCodec.unit(PineModelFeature::new);
+
     private record Entry(int dx, int dy, int dz, String code) {}
 
     private static final List<Entry[]> TREES = new ArrayList<>();
@@ -37,17 +39,18 @@ public class PineModelFeature extends Feature<NoneFeatureConfiguration> {
         }
     }
 
-    public PineModelFeature(Codec<NoneFeatureConfiguration> codec) {
-        super(codec);
+    public PineModelFeature() {}
+
+    @Override
+    public MapCodec<PineModelFeature> codec() {
+        return CODEC;
     }
 
     @Override
-    public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> ctx) {
-        WorldGenLevel level = ctx.level();
-        BlockPos origin = ctx.origin();
+    public boolean place(WorldGenLevel level, ChunkGenerator chunkGenerator, RandomSource random, BlockPos origin) {
         int n = TREES.size();
-        int start = ctx.random().nextInt(n);
-        int rot = ctx.random().nextInt(4);
+        int start = random.nextInt(n);
+        int rot = random.nextInt(4);
         // coba variasi acak dulu; kalau batangnya terhalang, coba yang lebih pendek
         for (int k = 0; k < n; k++) {
             Entry[] tree = TREES.get(Math.floorMod(start - k, n));
